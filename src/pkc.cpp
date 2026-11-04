@@ -6,6 +6,30 @@
 
 #include <robin/pkc.hpp>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+// GCC atomic builtins not available on MSVC — provide replacements via Interlocked intrinsics.
+// Two overloads: one for 32-bit `long` targets, one for 64-bit `size_t` targets.
+namespace {
+inline long msvc_sync_fetch_add(long* p, long v) {
+  return _InterlockedExchangeAdd(reinterpret_cast<volatile long*>(p), v);
+}
+inline size_t msvc_sync_fetch_add(size_t* p, long long v) {
+  return static_cast<size_t>(
+      _InterlockedExchangeAdd64(reinterpret_cast<volatile __int64*>(p), v));
+}
+inline long msvc_sync_fetch_sub(long* p, long v) {
+  return _InterlockedExchangeAdd(reinterpret_cast<volatile long*>(p), -v);
+}
+inline size_t msvc_sync_fetch_sub(size_t* p, long long v) {
+  return static_cast<size_t>(
+      _InterlockedExchangeAdd64(reinterpret_cast<volatile __int64*>(p), -v));
+}
+}  // namespace
+#define __sync_fetch_and_add(p, v) msvc_sync_fetch_add((p), (v))
+#define __sync_fetch_and_sub(p, v) msvc_sync_fetch_sub((p), (v))
+#endif
+
 int free_graph(robin::pkc::graph_t* g) {
   if (g->num_edges != nullptr) {
     free(g->num_edges);
@@ -29,7 +53,7 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
   size_t* newDeg = NULL;
   size_t* mapIndexToVtx = NULL;
   vid_t* vertexToIndex = (vid_t*)malloc(n * sizeof(vid_t));
-  size_t cumNumEdges[MAX_NUM_THREADS];
+  std::vector<size_t> cumNumEdges(MAX_NUM_THREADS);
   long part = 0;
   graph_t g_small;
   g_small.num_edges = NULL;
@@ -49,8 +73,8 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
     int useSmallQ = 0;
 
 #pragma omp for schedule(static)
-    for (size_t i = 0; i < n; i++) {
-      deg[i] = (g.GetVertexDegree(i));
+    for (long long i = 0; i < (long long)n; i++) {
+      deg[i] = (g.GetVertexDegree(static_cast<size_t>(i)));
     }
 
     while (visited < n) {
@@ -71,9 +95,9 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
 #pragma omp barrier
 
 #pragma omp for schedule(static)
-        for (size_t i = 0; i < n; i++) {
+        for (long long i = 0; i < (long long)n; i++) {
           if (deg[i] >= level) {
-            buff_vec.push_back(i);
+            buff_vec.push_back(static_cast<size_t>(i));
             //buff[end] = i;
             end++;
           }
@@ -240,10 +264,10 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
       if (useSmallQ == 0) {
 
 #pragma omp for schedule(static)
-        for (size_t i = 0; i < n; i++) {
+        for (long long i = 0; i < (long long)n; i++) {
           if (deg[i] == level) {
             //buff[end] = i;
-            buff_vec.push_back(i);
+            buff_vec.push_back(static_cast<size_t>(i));
             end++;
           }
         }
@@ -279,10 +303,10 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
       } else {
 
 #pragma omp for schedule(static)
-        for (size_t i = 0; i < Size; i++) {
+        for (long long i = 0; i < (long long)Size; i++) {
           if (newDeg[i] == level) {
             //buff[end] = i;
-            buff_vec.push_back(i);
+            buff_vec.push_back(static_cast<size_t>(i));
             end++;
           }
         }
@@ -330,7 +354,7 @@ void robin::pkc::PKC_optimized(const IGraph& g, size_t* deg) {
 
     // copy core values from newDeg to deg
 #pragma omp for schedule(static)
-    for (size_t i = 0; i < Size; i++) {
+    for (long long i = 0; i < (long long)Size; i++) {
       deg[mapIndexToVtx[i]] = newDeg[i];
     }
 
@@ -357,16 +381,16 @@ void robin::pkc::PKC_original(const IGraph& g, size_t* deg) {
     long start = 0, end = 0;
 
 #pragma omp for schedule(static)
-    for (size_t i = 0; i < n; i++) {
-      deg[i] = g.GetVertexDegree(i);
+    for (long long i = 0; i < (long long)n; i++) {
+      deg[i] = g.GetVertexDegree(static_cast<size_t>(i));
     }
 
     while (visited < n) {
 
 #pragma omp for schedule(static)
-      for (vid_t i = 0; i < n; i++) {
+      for (long long i = 0; i < (long long)n; i++) {
         if (deg[i] == level) {
-          buff_vec.push_back(i);
+          buff_vec.push_back(static_cast<size_t>(i));
           end++;
         }
       }

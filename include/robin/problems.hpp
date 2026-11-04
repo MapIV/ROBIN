@@ -11,6 +11,10 @@
 #include <cassert>
 #include <cmath>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include <robin/core.hpp>
 #include <robin/graph.hpp>
 #include <robin/math.hpp>

@@ -142,9 +142,9 @@ public:
       auto* subset_indices = new size_t[CompCheckFuncArity];
       auto* edge_pair_indices = new size_t[2];
 #pragma omp for
-      for (size_t i = 0; i < nr_subsets; ++i) {
+      for (long long i = 0; i < (long long)nr_subsets; ++i) {
         // compute current subset indices
-        robin::CombinationDecode(N, CompCheckFuncArity, i, subset_indices);
+        robin::CombinationDecode(N, CompCheckFuncArity, (size_t)i, subset_indices);
 
         // compute compatibility
         bool compatible = (*comp_check_func_)(y_set_, subset_indices);
@@ -221,9 +221,9 @@ public:
       std::queue<EdgeType> edge_buffer;
 
 #pragma omp for
-      for (size_t k = 0; k < N * (N - 1) / 2; ++k) {
-        size_t i = k / N;
-        size_t j = k % N;
+      for (long long k = 0; k < (long long)(N * (N - 1) / 2); ++k) {
+        size_t i = (size_t)k / N;
+        size_t j = (size_t)k % N;
         if (j <= i) {
           i = N - i - 2;
           j = N - j - 1;
@@ -293,12 +293,12 @@ public:
 
 #pragma omp for
       // visit each edge twice
-      for (size_t i = 0; i < N; ++i) {
+      for (long long i = 0; i < (long long)N; ++i) {
         for (size_t j = 0; j < N; ++j) {
-          subset_indices[0] = i;
+          subset_indices[0] = (size_t)i;
           subset_indices[1] = j;
           bool add_edge = (*(this->comp_check_func_))(this->y_set_, subset_indices);
-          if (add_edge && i != j) {
+          if (add_edge && (size_t)i != j) {
             adj_list[i].push_back(j);
             edge_count++;
           }
@@ -332,12 +332,12 @@ public:
 
 #pragma omp for
       // for loop that goes through each (i,j) edge twice
-      for (size_t i = 0; i < N; ++i) {
+      for (long long i = 0; i < (long long)N; ++i) {
         for (size_t j = 0; j < N; ++j) {
-          subset_indices[0] = i;
+          subset_indices[0] = (size_t)i;
           subset_indices[1] = j;
           bool add_edge = (*(this->comp_check_func_))(this->y_set_, subset_indices);
-          if (add_edge && i != j) {
+          if (add_edge && (size_t)i != j) {
             // add one to the offsets array
             offsets[i + 1]++;
           }
@@ -366,13 +366,13 @@ public:
 
 #pragma omp for
       // for loop that goes through each (i,j) edge twice
-      for (size_t i = 0; i < N; ++i) {
+      for (long long i = 0; i < (long long)N; ++i) {
         for (size_t j = 0; j < N; ++j) {
-          subset_indices[0] = i;
+          subset_indices[0] = (size_t)i;
           subset_indices[1] = j;
           bool add_edge = (*(this->comp_check_func_))(this->y_set_, subset_indices);
 
-          if (add_edge && i != j) {
+          if (add_edge && (size_t)i != j) {
             // put the edge in the edge array & increment local edge index offset
             edges[offsets[i] + vertex_local_offsets[i]] = j;
             vertex_local_offsets[i]++;
@@ -411,9 +411,9 @@ public:
       auto* subset_indices = new size_t[2];
 
 #pragma omp for
-      for (size_t k = 0; k < N * (N - 1) / 2; ++k) {
-        size_t i = k / N;
-        size_t j = k % N;
+      for (long long k = 0; k < (long long)(N * (N - 1) / 2); ++k) {
+        size_t i = (size_t)k / N;
+        size_t j = (size_t)k % N;
         if (j <= i) {
           i = N - i - 2;
           j = N - j - 1;
@@ -451,9 +451,9 @@ public:
       auto* subset_indices = new size_t[2];
 
 #pragma omp for
-      for (size_t k = 0; k < N * (N - 1) / 2; ++k) {
-        size_t i = k / N;
-        size_t j = k % N;
+      for (long long k = 0; k < (long long)(N * (N - 1) / 2); ++k) {
+        size_t i = (size_t)k / N;
+        size_t j = (size_t)k % N;
         if (j <= i) {
           i = N - i - 2;
           j = N - j - 1;
